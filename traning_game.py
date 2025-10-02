@@ -16,8 +16,8 @@ CAR_HEIGHT = 20
 TRACK_WIDTH = 9.8
 
 RAY_MAX_DISTANCE = 200
-RAY_SEQUENCE = [-90, -45, 0, 45, 90]
-RAY_DELAY = 0.12 
+RAY_SEQUENCE = [-90, -45, 0, 45, 90, 45, 0, -45]
+RAY_DELAY = 0.10 
 
 CAR_MAX_SPEED = 40 # pixels per second
 FRICTION = 1.0
@@ -29,14 +29,13 @@ WALLS = []
 # AI related properties
 
 CAR_COUNT = 10
-CMD_MIN_HOLD_FRAMES = 6
-GRID_CELL = 30
-OBSTICLE_COUNT = 10
-CHECK_DISTANCE_TIME = 2
-MIN_TRAVEL_DISTANCE = 35
-MAX_VIOLATION_COUNT = 4
+CMD_MIN_HOLD_FRAMES = 24
+GRID_CELL = 35
+OBSTICLE_COUNT = 30
+CHECK_DISTANCE_TIME = 2.5
+MIN_TRAVEL_DISTANCE = 25
 target_for_length = 10
-best_ever = 0.0
+best_ever_score = 0.0
 best_ever_policy = None
 
 #network policy
@@ -142,7 +141,7 @@ def random_obsticles(n=6):
     walls = make_borders()
     
     spawn_cx, spawn_cy = WIDTH/2, HEIGHT/2
-    safe_radius = random.randint(60, 90)
+    safe_radius = random.randint(45, 80)
     
     for _ in range(n):
         w = random.randint(60, 180)
@@ -162,6 +161,37 @@ def random_obsticles(n=6):
         
     return walls
 
+def _dist_to_room_border(x, y, ang):
+    dx, dy = math.cos(ang), math.sin(ang)
+    ts = []
+    if dx > 0:  ts.append((WIDTH - 15.0 - x) / dx)
+    if dx < 0:  ts.append((15.0 - x) / dx)
+    if dy > 0:  ts.append((HEIGHT - 15.0 - y) / dy)
+    if dy < 0:  ts.append((15.0 - y) / dy)
+    ts = [t for t in ts if t > 0]
+    return min(ts) if ts else float('inf')
+
+def _nearest_obstacle_hit(x, y, ang, obstacle_segments, max_len=10_000):
+    start = (x, y)
+    end   = (x + max_len*math.cos(ang), y + max_len*math.sin(ang))
+    nearest = float('inf')
+    for (p1, p2) in obstacle_segments:
+        hit, t, _, _ = seg_intersect(start, end, p1, p2)
+        if hit:
+            dist = t * math.hypot(end[0]-x, end[1]-y)
+            if 0 < dist < nearest:
+                nearest = dist
+    return nearest
+
+def map_has_escape(x, y, obstacle_segments, n_rays=180):
+    for i in range(n_rays):
+        ang = 2*math.pi * i / n_rays
+        d_border = _dist_to_room_border(x, y, ang)
+        d_obst   = _nearest_obstacle_hit(x, y, ang, obstacle_segments, max_len=2*max(WIDTH, HEIGHT))
+        if d_border < d_obst - 1e-6:
+            return True
+    return False
+
 class Car:
     def __init__(self, x, y, theta):
         self.x = x
@@ -169,7 +199,7 @@ class Car:
         self.theta = theta
         self.velocity_left = 0.0
         self.velocity_right = 0.0
-        self.ray_dists = {a: 0.0 for a in RAY_SEQUENCE}
+        self.ray_dists = {a: RAY_MAX_DISTANCE for a in RAY_SEQUENCE}
         self.ray_idx = random.randrange(len(RAY_SEQUENCE))
         self.ray_timer = random.uniform(0, RAY_DELAY)
         self.dead = False
@@ -178,12 +208,9 @@ class Car:
         self.cmd_l = 0
         self.cmd_r = 0
         self.cmd_hold = 0
-        
-        self.last_pos_x = self.x
-        self.last_pos_y = self.y
-        self.check_position_timer = 0
-        self.violation = 0
-        
+        self.mirror = bool(random.getrandbits(1))
+        self.previous = [x, y]
+        self._trail_time = 0.0
         self.just_entered_new_cell = False
         self.visited = set()
         self._mark_cell()
@@ -264,65 +291,52 @@ class Car:
 
 def car_observation(car):
     dists = [max(0.0, min(1.0, car.ray_dists[a] / RAY_MAX_DISTANCE)) for a in RAY_SEQUENCE]
-    v_l = car.velocity_left / CAR_MAX_SPEED
-    v_r = car.velocity_right / CAR_MAX_SPEED
-    return dists + [v_l, v_r]
+    
+    if car.mirror:
+        dists = dists[::-1]
+        cmd_tail = [car.cmd_r, car.cmd_l]
+    else:
+        cmd_tail = [car.cmd_l, car.cmd_r]
+    
+    return dists + cmd_tail
 
 def car_reward(car):
-    
-    #Revard method 1
-    #dx, dy = car.x - car.last_pos_x, car.y - car.last_pos_y
-    #car.last_pos_x, car.last_pos_y = car.x, car.y
-            
-    # = dx*math.cos(car.theta) + dy*math.sin(car.theta)
-    #reward = 0.01 + 0.10 * (0.5*(car.velocity_left+car.velocity_right)/CAR_MAX_SPEED)
-    #reward += 0.05 * max(0.0, step_forward)
-    #reward -= 0.05 * abs((car.velocity_right-car.velocity_left)/TRACK_WIDTH)
-    
-    
-    #Revard method 2
     reward = 0.01
     
-    if car.cmd_l == car.cmd_r:
-        if not (car.cmd_l <= 0):  
-            reward += 0.02
-    else:
-        reward -= 0.01
+    forvard_dist = car.ray_dists[0] / RAY_MAX_DISTANCE
+    direction = car.cmd_l + car.cmd_r
+    
+    left_space = (car.ray_dists[-90] + car.ray_dists[-45]) / 2
+    right_space = (car.ray_dists[90] + car.ray_dists[45]) / 2
+    
+    if forvard_dist >= 0.15 and direction == 2:
+        reward += 0.03
+    elif forvard_dist < 0.1 and direction == 2:
+        reward -= 0.06
+        
+    if left_space > right_space:
+        if car.cmd_l < car.cmd_r and forvard_dist < 0.15:
+            reward += 0.04
+        elif car.cmd_l > car.cmd_r:
+            reward -= 0.06
+    
+    if left_space < right_space:
+        if car.cmd_l > car.cmd_r and forvard_dist < 0.15:
+            reward += 0.04
+        elif car.cmd_l < car.cmd_r:
+            reward -= 0.06
+    
+    for a in (-90, -45, 45, 90):
+        
+        if car.ray_dists[a] < 60:
+            reward += 0.03
+        elif car.ray_dists[a] < 25:
+            reward -= 0.03
+    
+    if car.cmd_l == -car.cmd_r != 0:
+        reward -= 0.02
     
     return reward
-
-def check_rotation(car):
-    reward = 0
-    
-    left_space = 0.5 * (car.ray_dists[-90] + car.ray_dists[-45])
-    right_space = 0.5 * (car.ray_dists[45]  + car.ray_dists[90])
-    
-    if left_space > right_space:
-        if car.cmd_r < car.cmd_l:
-            reward -= 0.05
-    else:
-        if car.cmd_l < car.cmd_r:
-            reward -= 0.05
-    
-    return reward 
-
-def check_distance(car):
-    
-    distance = math.sqrt((car.last_pos_x - car.x)**2 + (car.last_pos_y - car.y)**2)
-    
-    car.last_pos_x = car.x
-    car.last_pos_y = car.y
-    car.check_position_timer = 0
-    
-    if car.violation >= MAX_VIOLATION_COUNT:
-        kill_car(car)
-        return 0
-    
-    if distance < MIN_TRAVEL_DISTANCE:
-        car.violation += 1
-        return -0.5
-    
-    return 0.01
 
 def car_collides(car_pts, walls):
     edges = pts_to_segments(car_pts)
@@ -336,6 +350,9 @@ def car_collides(car_pts, walls):
 def reset_world():
     global WALLS
     WALLS = random_obsticles(n=OBSTICLE_COUNT)
+    
+    while not map_has_escape(WIDTH / 2, HEIGHT / 2, WALLS, n_rays=180):
+        WALLS = random_obsticles(n=OBSTICLE_COUNT)
     car = []
     for _i in range(CAR_COUNT):
         car.append(create_car())
@@ -345,6 +362,8 @@ def reset_world():
 def kill_car(car):
     car.fitness -= 1.0
     car.dead = True
+    car.velocity_left = 0.0
+    car.velocity_right = 0.0
 
 def create_car():
     return Car(WIDTH / 2 + random.randint(-30, 30), HEIGHT / 2  + random.randint(-30, 30), random.uniform(-1.0, 1.0))
@@ -421,6 +440,9 @@ def main(render=True, mode="train", load_path=None):
             obs = car_observation(car)
             a_l, a_r = car.policy.act(obs)
             
+            if car.mirror:
+                a_l, a_r = a_r, a_l
+            
             q_l = quantize_ternary(a_l, deadband=0.3)
             q_r = quantize_ternary(a_r, deadband=0.3)
             
@@ -435,19 +457,20 @@ def main(render=True, mode="train", load_path=None):
             car.set_tracks_speed(car.cmd_l * CAR_MAX_SPEED, car.cmd_r * CAR_MAX_SPEED)
             car.update(delta_time)
             
+            car._trail_time += delta_time
+            
+            if car._trail_time >= CHECK_DISTANCE_TIME:
+                x, y = car.previous[0], car.previous[1]
+                if (x-car.x)**2 + (y-car.y)**2 < MIN_TRAVEL_DISTANCE**2:
+                    kill_car(car)
+                else:
+                    car.previous[0], car.previous[1] = car.x, car.y
+                car._trail_time = 0
+            
             reward = 0
             
-            car.check_position_timer += delta_time
-            
-            if car.check_position_timer > CHECK_DISTANCE_TIME:
-                reward += check_distance(car)
-            
-            reward += check_rotation(car)
             reward += car_reward(car)
             car.fitness += reward
-            
-            if car.just_entered_new_cell:
-                car.fitness += 0.15
         
             if car_collides(car.get_shape(), WALLS):
                 kill_car(car)
@@ -487,24 +510,17 @@ def main(render=True, mode="train", load_path=None):
             avg  = sum(c.fitness for c in cars) / len(cars)
             print(f"Gen {GEN:03d}  best={best:.2f}  avg={avg:.2f}")
             
-            global target_for_length
-            global best_ever
-            global best_ever_policy
+            global target_for_length, best_ever_score
             
             if best > target_for_length:
                 EPISODE_LEN = int(EPISODE_LEN * 1.1)
-                OBSTICLE_COUNT = min(30, OBSTICLE_COUNT + 1)
                 target_for_length *= 1.10
             
-            if best > best_ever:
-                #best_ever_policy = elites[0]
-                best_ever = best
-                np.savez("best_policy_gen%03d.npz" % GEN,
+            if best > best_ever_score:
+                best_ever_score = best
+                np.savez("best_policy(b="+ str(int(best)) +"_a="+ str(int(avg)) +")_gen" + str(GEN) +".npz",
                     w1=elites[0].policy.w1, b1=elites[0].policy.b1,
                     w2=elites[0].policy.w2, b2=elites[0].policy.b2)
-            
-            #if GEN == 1:
-                #best_ever_policy = elites[0]
             
             new_cars = []
             for e in elites:
@@ -515,15 +531,13 @@ def main(render=True, mode="train", load_path=None):
             while len(new_cars) < CAR_COUNT:
                 parent = random.choice(elites)
                 child = create_car()
-                child.policy = parent.policy.clone_mutate(sigma=0.20)
+                child.policy = parent.policy.clone_mutate(sigma=0.10)
                 new_cars.append(child)
             
-            #if best_ever - best > 150:
-                #new_cars[0].policy = best_ever_policy.policy.clone_mutate(sigma=0.05)
-                #new_cars[1].policy = best_ever_policy.policy.clone_mutate(sigma=0.05)
-                #new_cars[2].policy = best_ever_policy.policy.clone_mutate(sigma=0.05)
-            
             WALLS = random_obsticles(n=OBSTICLE_COUNT)
+            
+            while not map_has_escape(WIDTH / 2, HEIGHT / 2, WALLS, n_rays=180):
+                WALLS = random_obsticles(n=OBSTICLE_COUNT)
             
             cars = new_cars
             frame_count = 0

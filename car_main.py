@@ -3,10 +3,12 @@ import uasyncio as aio
 import math, time, random
 
 from vl53l0x import VL53L0X          
-from policy_runtime import mlp_act
+from run_time import mlp_act
 
 DEADBAND = 0.30
 PWM_DUTY_ON = 0.85
+power_L = 1.0
+power_R = 0.9
 PULSE_MIN_US = 500
 PULSE_MAX_US = 2500
 
@@ -34,9 +36,9 @@ tof = VL53L0X(i2c)
 tof.start()
 
 SEC_PER_DEG = 0.002
-RAY_MAX_CM   = 200.0
+RAY_MAX_CM = 200.0
 
-RAY_SEQUENCE = [-90, -45, 0, 45, 90]
+RAY_SEQUENCE = [-90, -45, 0, 45, 90, 45, 0, -45]
 ray_dists = {a: RAY_MAX_CM for a in RAY_SEQUENCE}
 ray_idx = random.randrange(len(RAY_SEQUENCE))
 last_servo_deg = 90
@@ -97,13 +99,15 @@ def _duty_from_frac(frac):
     return int(frac * 65535)
 
 def set_tracks(qL, qR):
+    dutyL = _duty_from_frac(PWM_DUTY_ON * power_L)
+    dutyR = _duty_from_frac(PWM_DUTY_ON * power_R)
     # Left
-    if qL > 0:   AIN1.value(1); AIN2.value(0); PWMA.duty_u16(_duty_from_frac(PWM_DUTY_ON))
-    elif qL < 0: AIN1.value(0); AIN2.value(1); PWMA.duty_u16(_duty_from_frac(PWM_DUTY_ON))
+    if qL > 0:   AIN1.value(1); AIN2.value(0); PWMA.duty_u16(dutyL)
+    elif qL < 0: AIN1.value(0); AIN2.value(1); PWMA.duty_u16(dutyL)
     else:        AIN1.value(0); AIN2.value(0); PWMA.duty_u16(0)
     # Right
-    if qR > 0:   BIN1.value(1); BIN2.value(0); PWMB.duty_u16(_duty_from_frac(PWM_DUTY_ON))
-    elif qR < 0: BIN1.value(0); BIN2.value(1); PWMB.duty_u16(_duty_from_frac(PWM_DUTY_ON))
+    if qR > 0:   BIN1.value(1); BIN2.value(0); PWMB.duty_u16(dutyR)
+    elif qR < 0: BIN1.value(0); BIN2.value(1); PWMB.duty_u16(dutyR)
     else:        BIN1.value(0); BIN2.value(0); PWMB.duty_u16(0)
     
 # ----- Other -----
