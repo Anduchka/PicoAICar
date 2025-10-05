@@ -6,6 +6,7 @@ WIDTH, HEIGHT = 1000, 1000
 FPS = 60
 BG = (25, 28, 33)
 CAR_COLOR = (40, 180, 255)
+BEST_CAR_COLOR = (108, 245, 39)
 RAY_COLOR = (240, 220, 120)
 WALL_COLOR = (200, 200, 200)
 
@@ -17,6 +18,7 @@ TRACK_WIDTH = 9.8
 
 RAY_MAX_DISTANCE = 200
 RAY_SEQUENCE = [-90, -45, 0, 45, 90, 45, 0, -45]
+OBS_ANGLES = [-90, -45, 0, 45, 90]
 RAY_DELAY = 0.10 
 
 CAR_MAX_SPEED = 40 # pixels per second
@@ -28,19 +30,19 @@ WALLS = []
 
 # AI related properties
 
-CAR_COUNT = 10
-CMD_MIN_HOLD_FRAMES = 24
+CAR_COUNT = 30
+CMD_MIN_HOLD_FRAMES = 10
 GRID_CELL = 35
 OBSTICLE_COUNT = 30
 CHECK_DISTANCE_TIME = 2.5
 MIN_TRAVEL_DISTANCE = 25
 target_for_length = 10
+
 best_ever_score = 0.0
-best_ever_policy = None
 
 #network policy
 
-OBS_DIM = len(RAY_SEQUENCE) + 2
+OBS_DIM = len(OBS_ANGLES) + 2
 HID = 16
 ACT_DIM = 2
 
@@ -290,7 +292,7 @@ class Car:
         return max(0.0, min(RAY_MAX_DISTANCE, d))
 
 def car_observation(car):
-    dists = [max(0.0, min(1.0, car.ray_dists[a] / RAY_MAX_DISTANCE)) for a in RAY_SEQUENCE]
+    dists = [max(0.0, min(1.0, car.ray_dists[a] / RAY_MAX_DISTANCE)) for a in OBS_ANGLES]
     
     if car.mirror:
         dists = dists[::-1]
@@ -301,40 +303,47 @@ def car_observation(car):
     return dists + cmd_tail
 
 def car_reward(car):
-    reward = 0.01
     
-    forvard_dist = car.ray_dists[0] / RAY_MAX_DISTANCE
+    reward = 0.0
+    
+    forvard_dist = car.ray_dists[0]
     direction = car.cmd_l + car.cmd_r
     
     left_space = (car.ray_dists[-90] + car.ray_dists[-45]) / 2
     right_space = (car.ray_dists[90] + car.ray_dists[45]) / 2
     
-    if forvard_dist >= 0.15 and direction == 2:
+    if forvard_dist >= 15 and direction == 2:
         reward += 0.03
-    elif forvard_dist < 0.1 and direction == 2:
-        reward -= 0.06
+    elif forvard_dist < 10 and direction == 2:
+        reward -= 0.01
         
-    if left_space > right_space:
-        if car.cmd_l < car.cmd_r and forvard_dist < 0.15:
-            reward += 0.04
-        elif car.cmd_l > car.cmd_r:
-            reward -= 0.06
+    if left_space > right_space: #turn left
+        if car.cmd_r > car.cmd_l:
+            reward += 0.08
+        elif car.cmd_r < car.cmd_l:
+            reward -= 0.08
     
-    if left_space < right_space:
-        if car.cmd_l > car.cmd_r and forvard_dist < 0.15:
-            reward += 0.04
+    elif right_space > left_space:#turn right
+        if car.cmd_l > car.cmd_r:
+            reward += 0.08
         elif car.cmd_l < car.cmd_r:
-            reward -= 0.06
+            reward -= 0.08
+    
+    abstruction = False
     
     for a in (-90, -45, 45, 90):
-        
-        if car.ray_dists[a] < 60:
-            reward += 0.03
-        elif car.ray_dists[a] < 25:
-            reward -= 0.03
+        if car.ray_dists[a] < 10:
+            reward -= 0.05
+        elif car.ray_dists[a] < 15:
+            abstruction = True
+        if car.ray_dists[a] > 15 and car.ray_dists[a] < 40:
+            reward += 0.05
     
-    if car.cmd_l == -car.cmd_r != 0:
-        reward -= 0.02
+    if not abstruction:
+        if car.cmd_l == -car.cmd_r != 0:
+            reward -= 0.05
+        elif car.cmd_l == car.cmd_r == -1:
+            reward -= 0.05
     
     return reward
 
@@ -366,7 +375,7 @@ def kill_car(car):
     car.velocity_right = 0.0
 
 def create_car():
-    return Car(WIDTH / 2 + random.randint(-30, 30), HEIGHT / 2  + random.randint(-30, 30), random.uniform(-1.0, 1.0))
+    return Car(WIDTH / 2 + random.uniform(-15, 15), HEIGHT / 2  + random.uniform(-15, 15), random.uniform(-math.pi, math.pi))
 
 def load_policy_npz(path):
     z = np.load(path)
@@ -408,13 +417,15 @@ def main(render=True, mode="train", load_path=None):
     global WALLS
     global OBSTICLE_COUNT
     
+    best_car_now = cars[0]
+    
     while run:
         
         if render:
             screen.fill((0,0,0))
             delta_time = clock.tick(FPS) / 1000.0
         else:
-            delta_time = 1.0 / 360.0
+            delta_time = 1.0 / 720.0
     
         for event in pygame.event.get():
             
@@ -488,7 +499,11 @@ def main(render=True, mode="train", load_path=None):
                     ey = car.y + dist * math.sin(ang_r)
                     pygame.draw.line(screen, RAY_COLOR, (car.x, car.y), (ex, ey), 2)
                     pygame.draw.circle(screen, RAY_COLOR, (int(ex), int(ey)), 3)
-        
+                
+                if best_car_now.fitness < car.fitness:
+                    best_car_now = car
+                pygame.draw.circle(screen, BEST_CAR_COLOR, (best_car_now.x, best_car_now.y), 8)
+            
         frame_count += 1
         
         if frame_count >= EPISODE_LEN or dead_cars >= CAR_COUNT:
@@ -516,11 +531,14 @@ def main(render=True, mode="train", load_path=None):
                 EPISODE_LEN = int(EPISODE_LEN * 1.1)
                 target_for_length *= 1.10
             
+            policy_name = "best_policy"
+            
             if best > best_ever_score:
                 best_ever_score = best
-                np.savez("best_policy(b="+ str(int(best)) +"_a="+ str(int(avg)) +")_gen" + str(GEN) +".npz",
-                    w1=elites[0].policy.w1, b1=elites[0].policy.b1,
-                    w2=elites[0].policy.w2, b2=elites[0].policy.b2)
+                policy_name = "new_best_policy"
+            np.savez(policy_name + "(b="+ str(int(best)) +"_a="+ str(int(avg)) +")_gen" + str(GEN) +".npz",
+                w1=elites[0].policy.w1, b1=elites[0].policy.b1,
+                w2=elites[0].policy.w2, b2=elites[0].policy.b2)
             
             new_cars = []
             for e in elites:
@@ -531,7 +549,7 @@ def main(render=True, mode="train", load_path=None):
             while len(new_cars) < CAR_COUNT:
                 parent = random.choice(elites)
                 child = create_car()
-                child.policy = parent.policy.clone_mutate(sigma=0.10)
+                child.policy = parent.policy.clone_mutate(sigma=0.15)
                 new_cars.append(child)
             
             WALLS = random_obsticles(n=OBSTICLE_COUNT)
@@ -540,6 +558,7 @@ def main(render=True, mode="train", load_path=None):
                 WALLS = random_obsticles(n=OBSTICLE_COUNT)
             
             cars = new_cars
+            best_car_now = cars[0]
             frame_count = 0
         
         if render:
@@ -551,7 +570,7 @@ def main(render=True, mode="train", load_path=None):
 
     pygame.quit()
     
-#py traning_game.py --render --play --load best_policy_gen053.npz
+#py traning_game.py --render --play --cars 10 --load 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument("--render", action="store_true", help="show pygame window")
@@ -563,8 +582,6 @@ if __name__ == "__main__":
     CAR_COUNT = args.cars
     
     mode = "play" if args.play else "train"
-    
-    
     
     if mode == "play":
         OBSTICLE_COUNT = 30

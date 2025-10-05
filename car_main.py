@@ -32,13 +32,15 @@ shut.value(1)
 time.sleep(0.02)
 
 i2c = I2C(0, sda=Pin(0), scl=Pin(1), freq=400000)
+print(i2c.scan())
 tof = VL53L0X(i2c)
 tof.start()
 
-SEC_PER_DEG = 0.002
+SEC_PER_DEG = 0.003
 RAY_MAX_CM = 200.0
 
 RAY_SEQUENCE = [-90, -45, 0, 45, 90, 45, 0, -45]
+OBS_ANGLES = [-90, -45, 0, 45, 90]
 ray_dists = {a: RAY_MAX_CM for a in RAY_SEQUENCE}
 ray_idx = random.randrange(len(RAY_SEQUENCE))
 last_servo_deg = 90
@@ -69,6 +71,9 @@ async def scan_dists():
         ray_dists[RAY_SEQUENCE[ray_idx]] = sm
         
         ray_idx = (ray_idx + 1) % len(RAY_SEQUENCE)
+        
+        if ray_idx % len(RAY_SEQUENCE) == 0:
+            print(ray_dists)
 
 # ---- Motor driver -----
 
@@ -121,7 +126,7 @@ def quantize_ternary(x, deadband=DEADBAND):
     return 0
 
 def build_observation():
-    d = [min(1.0, max(0.0, ray_dists[a] / RAY_MAX_CM)) for a in RAY_SEQUENCE]
+    d = [min(1.0, max(0.0, ray_dists[a] / RAY_MAX_CM)) for a in OBS_ANGLES]
     return d + [cmd_l, cmd_r]
 
 async def task_control():
