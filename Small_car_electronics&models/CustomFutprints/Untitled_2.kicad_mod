@@ -1,0 +1,113 @@
+(footprint "Untitled_2"
+	(version 20241229)
+	(generator "pcbnew")
+	(generator_version "9.0")
+	(layer "F.Cu")
+	(property "Reference" "TOF200C"
+		(at 0 -1.5 0)
+		(unlocked yes)
+		(layer "F.SilkS")
+		(uuid "784562e7-e1de-43fb-8870-2bb4114c987c")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.1)
+			)
+		)
+	)
+	(property "Value" "Untitled_2"
+		(at 0 1 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "c173e73d-5096-4f3c-8dbc-54fa73cc7018")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "af6bfcaa-9c7f-49bf-888a-8bdcf7a210c3")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "e23e495a-6e61-47f6-9c1c-325671e180ee")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr smd)
+	(fp_rect
+		(start -5.5 -4.8)
+		(end 4.4 -2.4)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill no)
+		(layer "F.SilkS")
+		(uuid "e75240bd-199b-4c01-ae1e-e1e8fe778f40")
+	)
+	(fp_text user "${REFERENCE}"
+		(at 0 2.5 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "7211820d-05d6-4673-ac02-07f0081fbd6a")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(pad "1" thru_hole oval
+		(at 3.2 -3.6)
+		(size 1.5 2)
+		(drill 1)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "6b9106f9-a42e-4d7c-949b-cb901eee2e2a")
+	)
+	(pad "2" thru_hole oval
+		(at 0.7 -3.6)
+		(size 1.5 2)
+		(drill 1)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "2a7e581a-4abb-4c7c-bb22-ec39d50c1561")
+	)
+	(pad "3" thru_hole oval
+		(at -1.8 -3.6)
+		(size 1.5 2)
+		(drill 1)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "214b0af2-2650-425e-b99c-f15f99cc0857")
+	)
+	(pad "4" thru_hole oval
+		(at -4.3 -3.6)
+		(size 1.5 2)
+		(drill 1)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "0f288485-8e1d-405b-beb7-46dc6e47da29")
+	)
+	(embedded_fonts no)
+)

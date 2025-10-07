@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "Small_car_library")(type "KiCad")(uri "${KIPRJMOD}/Small_car_library.kicad_sym")(options "")(descr ""))
+)
