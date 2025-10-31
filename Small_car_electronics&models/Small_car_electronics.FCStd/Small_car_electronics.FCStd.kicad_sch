@@ -1863,158 +1863,6 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Small_car_library:GY-273_Compass"
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "GY-273_Compass"
-				(at 0 6.604 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "GY-273_Compass_1_1"
-				(rectangle
-					(start -6.35 5.08)
-					(end 6.35 -3.81)
-					(stroke
-						(width 0)
-						(type solid)
-					)
-					(fill
-						(type background)
-					)
-				)
-				(pin input line
-					(at -5.08 -6.35 90)
-					(length 2.54)
-					(name "Vcc"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number ""
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at -2.54 -6.35 90)
-					(length 2.54)
-					(name "GND"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number ""
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at 0 -6.35 90)
-					(length 2.54)
-					(name "SCL"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number ""
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at 2.54 -6.35 90)
-					(length 2.54)
-					(name "SDA"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number ""
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at 5.08 -6.35 90)
-					(length 2.54)
-					(name "DRDY"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number ""
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
 		(symbol "Small_car_library:MT3608DC_Step_Up_Module"
 			(exclude_from_sim no)
 			(in_bom yes)
@@ -3026,12 +2874,6 @@
 		)
 	)
 	(junction
-		(at 113.03 58.42)
-		(diameter 0)
-		(color 255 209 4 1)
-		(uuid "0bf417ee-e45a-48fd-ace2-f16e10b1cf52")
-	)
-	(junction
 		(at 140.97 143.51)
 		(diameter 0)
 		(color 0 116 255 1)
@@ -3044,22 +2886,10 @@
 		(uuid "5434b993-04c0-459b-8a9f-770ef3a238bf")
 	)
 	(junction
-		(at 69.85 34.29)
-		(diameter 0)
-		(color 255 106 110 1)
-		(uuid "5675db67-d7b3-4b70-b399-6700d221ab2d")
-	)
-	(junction
 		(at 133.35 132.08)
 		(diameter 0)
 		(color 255 106 110 1)
 		(uuid "5d8ca73e-e6c5-4a8a-9a12-8186959a4a6f")
-	)
-	(junction
-		(at 142.24 45.72)
-		(diameter 0)
-		(color 0 116 255 1)
-		(uuid "5fccdc71-ffaf-438f-82b4-5ad10980cea3")
 	)
 	(junction
 		(at 52.07 26.67)
@@ -3090,12 +2920,6 @@
 		(diameter 0)
 		(color 0 116 255 1)
 		(uuid "b27bdba7-b14b-43a0-ac6d-1af6282e72eb")
-	)
-	(junction
-		(at 115.57 55.88)
-		(diameter 0)
-		(color 255 209 4 1)
-		(uuid "b29de7f1-d50c-46ac-ac20-263a48f565a1")
 	)
 	(junction
 		(at 127 143.51)
@@ -3135,17 +2959,6 @@
 			(color 0 116 255 1)
 		)
 		(uuid "0a1c34ce-61d8-4138-9ee7-56212c4ba45a")
-	)
-	(wire
-		(pts
-			(xy 69.85 19.05) (xy 69.85 34.29)
-		)
-		(stroke
-			(width 0)
-			(type default)
-			(color 255 106 110 1)
-		)
-		(uuid "1041522a-c6ec-41e7-961e-620bd892992e")
 	)
 	(wire
 		(pts
@@ -3347,7 +3160,7 @@
 	)
 	(wire
 		(pts
-			(xy 69.85 73.66) (xy 72.39 73.66)
+			(xy 71.12 73.66) (xy 72.39 73.66)
 		)
 		(stroke
 			(width 0)
@@ -3433,17 +3246,6 @@
 	)
 	(wire
 		(pts
-			(xy 113.03 58.42) (xy 113.03 38.1)
-		)
-		(stroke
-			(width 0)
-			(type default)
-			(color 255 209 4 1)
-		)
-		(uuid "4e385c70-bcb5-41e7-9988-8ed9a34af8a3")
-	)
-	(wire
-		(pts
 			(xy 104.14 78.74) (xy 119.38 78.74)
 		)
 		(stroke
@@ -3496,17 +3298,6 @@
 			(color 0 0 0 1)
 		)
 		(uuid "55b95063-dfee-4c05-b343-4f109aeb19f5")
-	)
-	(wire
-		(pts
-			(xy 91.44 38.1) (xy 91.44 34.29)
-		)
-		(stroke
-			(width 0)
-			(type default)
-			(color 255 209 4 1)
-		)
-		(uuid "55cd704d-85df-426f-902b-163f1e377188")
 	)
 	(wire
 		(pts
@@ -3663,7 +3454,7 @@
 	)
 	(wire
 		(pts
-			(xy 69.85 34.29) (xy 69.85 73.66)
+			(xy 71.12 38.1) (xy 71.12 73.66)
 		)
 		(stroke
 			(width 0)
@@ -3718,7 +3509,7 @@
 	)
 	(wire
 		(pts
-			(xy 172.72 19.05) (xy 69.85 19.05)
+			(xy 173.99 38.1) (xy 71.12 38.1)
 		)
 		(stroke
 			(width 0)
@@ -3751,17 +3542,6 @@
 	)
 	(wire
 		(pts
-			(xy 115.57 36.83) (xy 93.98 36.83)
-		)
-		(stroke
-			(width 0)
-			(type default)
-			(color 255 209 4 1)
-		)
-		(uuid "89127f08-b616-40e6-814b-992eec6ffbce")
-	)
-	(wire
-		(pts
 			(xy 24.13 45.72) (xy 50.8 45.72)
 		)
 		(stroke
@@ -3784,28 +3564,6 @@
 	)
 	(wire
 		(pts
-			(xy 115.57 55.88) (xy 115.57 36.83)
-		)
-		(stroke
-			(width 0)
-			(type default)
-			(color 255 209 4 1)
-		)
-		(uuid "90e0fa21-6223-4784-acec-6c272646c8a0")
-	)
-	(wire
-		(pts
-			(xy 69.85 34.29) (xy 86.36 34.29)
-		)
-		(stroke
-			(width 0)
-			(type default)
-			(color 255 106 110 1)
-		)
-		(uuid "91a88e0c-fb71-45b7-864b-a2d49a3ae473")
-	)
-	(wire
-		(pts
 			(xy 72.39 86.36) (xy 68.58 86.36)
 		)
 		(stroke
@@ -3817,7 +3575,7 @@
 	)
 	(wire
 		(pts
-			(xy 147.32 125.73) (xy 172.72 125.73)
+			(xy 147.32 125.73) (xy 173.99 125.73)
 		)
 		(stroke
 			(width 0)
@@ -3883,7 +3641,7 @@
 	)
 	(wire
 		(pts
-			(xy 172.72 125.73) (xy 172.72 19.05)
+			(xy 173.99 125.73) (xy 173.99 38.1)
 		)
 		(stroke
 			(width 0)
@@ -4014,28 +3772,6 @@
 	)
 	(wire
 		(pts
-			(xy 88.9 34.29) (xy 88.9 45.72)
-		)
-		(stroke
-			(width 0)
-			(type default)
-			(color 0 116 255 1)
-		)
-		(uuid "c2f45aad-deee-4d34-8d97-88cc7e2863c0")
-	)
-	(wire
-		(pts
-			(xy 88.9 45.72) (xy 142.24 45.72)
-		)
-		(stroke
-			(width 0)
-			(type default)
-			(color 0 116 255 1)
-		)
-		(uuid "c626bea5-6491-42aa-8449-9abaf17fc2e8")
-	)
-	(wire
-		(pts
 			(xy 95.25 132.08) (xy 104.14 132.08)
 		)
 		(stroke
@@ -4077,28 +3813,6 @@
 			(color 0 116 255 1)
 		)
 		(uuid "d38174b2-9150-44d7-884c-da03a6598811")
-	)
-	(wire
-		(pts
-			(xy 113.03 38.1) (xy 91.44 38.1)
-		)
-		(stroke
-			(width 0)
-			(type default)
-			(color 255 209 4 1)
-		)
-		(uuid "d4382c2b-52d9-467b-b1cb-e0035c2b6509")
-	)
-	(wire
-		(pts
-			(xy 93.98 36.83) (xy 93.98 34.29)
-		)
-		(stroke
-			(width 0)
-			(type default)
-			(color 255 209 4 1)
-		)
-		(uuid "d5072c69-5c88-42ec-846d-549581b5949d")
 	)
 	(wire
 		(pts
@@ -5073,85 +4787,6 @@
 			(project ""
 				(path "/57f4a931-d044-4723-9071-adfaac19c929"
 					(reference "M3")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Small_car_library:GY-273_Compass")
-		(at 91.44 27.94 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "b5c4976e-eb5f-4021-bae4-e0e2dafee7f2")
-		(property "Reference" "GY-273_Compass1"
-			(at 99.06 26.0349 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "~"
-			(at 99.06 28.5749 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" ""
-			(at 91.44 27.94 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 91.44 27.94 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" ""
-			(at 91.44 27.94 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin ""
-			(uuid "c889d23e-04a9-4d57-ab47-25f35198fa53")
-		)
-		(pin ""
-			(uuid "ac137a39-0d47-42a5-99a1-abd8090a7cca")
-		)
-		(pin ""
-			(uuid "9059fd13-d734-4467-91dd-e83815388e44")
-		)
-		(pin ""
-			(uuid "a65e14fa-9022-4366-84b3-4b4ee965fcea")
-		)
-		(pin ""
-			(uuid "8095ed9d-8499-40fd-b31d-f7de27d1ca39")
-		)
-		(instances
-			(project ""
-				(path "/57f4a931-d044-4723-9071-adfaac19c929"
-					(reference "GY-273_Compass1")
 					(unit 1)
 				)
 			)

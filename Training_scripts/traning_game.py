@@ -17,8 +17,7 @@ CAR_HEIGHT = 20
 TRACK_WIDTH = 9.8
 
 RAY_MAX_DISTANCE = 200
-RAY_SEQUENCE = [-90, -45, 0, 45, 90, 45, 0, -45]
-OBS_ANGLES = [-90, -45, 0, 45, 90]
+RAY_SEQUENCE = [-90, -45, 0, 45, 90]
 RAY_DELAY = 0.10 
 
 CAR_MAX_SPEED = 40 # pixels per second
@@ -31,10 +30,10 @@ WALLS = []
 # AI related properties
 
 CAR_COUNT = 30
-CMD_MIN_HOLD_FRAMES = 6
+CMD_MIN_HOLD_FRAMES = 5
 GRID_CELL = 40
-OBSTICLE_COUNT = 30
-CHECK_DISTANCE_TIME = 2.5
+OBSTICLE_COUNT = 45
+CHECK_DISTANCE_TIME = 3
 MIN_TRAVEL_DISTANCE = 25
 target_for_length = 10
 
@@ -42,7 +41,7 @@ best_ever_score = 0.0
 
 #network policy
 
-OBS_DIM = len(OBS_ANGLES) + 2
+OBS_DIM = len(RAY_SEQUENCE) + 2
 HID = 16
 ACT_DIM = 2
 
@@ -163,63 +162,6 @@ def random_obsticles(n=6): # primary obsticle generator
         
     return walls
 
-def generate_maze(cell=GRID_CELL): # basic maze for testing
-    cols = (WIDTH - 20) // cell
-    rows = (HEIGHT - 20) // cell
-    
-    cells = [[0 for _ in range(cols)] for _ in range(rows)]
-    visited = [[False for _ in range(cols)] for _ in range(rows)]
-    history = []
-    
-    initial = [random.randint(0, cols - 1), random.randint(0, rows - 1)]
-    
-    history.append(initial)
-    visited[initial[0]][initial[1]] = True
-    
-    while True:
-        x, y = history[-1]
-        
-        dirs = [(1, 0), (-1, 0), (0, 1), (0, -1)]
-        random.shuffle(dirs)
-        
-        changed = False
-        
-        for dx, dy in dirs:
-            nx, ny = x + dx, y + dy
-            
-            if 0 <= nx < cols and 0 <= ny < rows:
-                if not visited[nx][ny]:
-                    if dx == 1:
-                        cells[nx][ny] = 1
-                    elif dx == -1:
-                        cells[x][y] = 3 if cells[x][y] == 2 else 1
-                    elif dy == -1:
-                        cells[nx][ny] = 2
-                    elif dy == 1:
-                        cells[x][y] = 3 if cells[x][y] == 1 else 2
-                    
-                    visited[nx][ny] = True 
-                    changed = True
-                    history.append([nx, ny])
-                    break 
-        
-        if not changed:
-            history.pop()
-        if len(history) <= 0:
-            break 
-    
-    walls = make_borders()
-    
-    for y in range(rows):
-        for x in range(cols):
-            if cells[x][y] == 1:
-                walls.append(((x * cell, y * cell), (x * cell + cell, y * cell)))
-            elif cells[x][y] == 2:
-                walls.append(((x * cell, y * cell), (x * cell, y * cell + cell)))
-    
-    
-    return walls
-
 def _dist_to_room_border(x, y, ang): #check distance to room border from point
     dx, dy = math.cos(ang), math.sin(ang)
     ts = []
@@ -259,6 +201,7 @@ class Car:
         self.velocity_left = 0.0
         self.velocity_right = 0.0
         self.ray_dists = {a: RAY_MAX_DISTANCE for a in RAY_SEQUENCE}
+        self.temp_ray_dists = dict(self.ray_dists)
         self.ray_idx = random.randrange(len(RAY_SEQUENCE))
         self.ray_timer = random.uniform(0, RAY_DELAY)
         self.dead = False
@@ -267,12 +210,13 @@ class Car:
         self.cmd_l = 0
         self.cmd_r = 0
         self.cmd_hold = 0
-        self.mirror = bool(random.getrandbits(1))
         self.previous = [x, y]
         self._trail_time = 0.0
         self.just_entered_new_cell = False
         self.visited = set()
         self._mark_cell()
+        
+        self.turn_stats = 0.0
         
     def _mark_cell(self):
         cx = int(self.x // GRID_CELL)
@@ -349,13 +293,9 @@ class Car:
         return max(0.0, min(RAY_MAX_DISTANCE, d))
 
 def car_observation(car):
-    dists = [max(0.0, min(1.0, car.ray_dists[a] / RAY_MAX_DISTANCE)) for a in OBS_ANGLES]
+    dists = [max(0.0, min(1.0, car.ray_dists[a] / RAY_MAX_DISTANCE)) for a in RAY_SEQUENCE]
     
-    if car.mirror:
-        dists = dists[::-1]
-        cmd_tail = [car.cmd_r, car.cmd_l]
-    else:
-        cmd_tail = [car.cmd_l, car.cmd_r]
+    cmd_tail = [car.cmd_l, car.cmd_r]
     
     return dists + cmd_tail
 
@@ -370,7 +310,7 @@ def car_reward(car): # reward car
     right_space = (car.ray_dists[90] + car.ray_dists[45]) / 2
     
     if forvard_dist >= 15 and direction == 2:
-        reward += 0.03
+        reward += 0.06
     elif forvard_dist < 10 and direction == 2:
         reward -= 0.01
     
@@ -378,30 +318,32 @@ def car_reward(car): # reward car
     
     for a in (-90, -45, 45, 90):
         if car.ray_dists[a] < 10:
-            reward -= 0.05
-        elif car.ray_dists[a] < 25:
+            reward -= 0.08
+        if car.ray_dists[a] < 15:
             abstruction = True
-        if car.ray_dists[a] > 15 and car.ray_dists[a] < 40:
+        if car.ray_dists[a] > 10 and car.ray_dists[a] < 30:
             reward += 0.05
     
-    if not abstruction:
-        if car.cmd_l == -car.cmd_r != 0:
-            reward -= 0.05
-        elif car.cmd_l == car.cmd_r == -1:
-            reward -= 0.05
+    if car.cmd_l == -car.cmd_r != 0:
+        reward -= 0.02
+    elif car.cmd_l == car.cmd_r == -1:
+        reward -= 0.02
     
     if left_space > right_space: #turn left
         if car.cmd_r > car.cmd_l and abstruction:
-            reward += 0.08
-        elif car.cmd_r < car.cmd_l:
-            reward -= 0.08
+            reward += 0.05
+        elif car.cmd_r < car.cmd_l and abstruction:
+            reward -= 0.05
     
     elif right_space > left_space:#turn right
         if car.cmd_l > car.cmd_r and abstruction:
-            reward += 0.08
-        elif car.cmd_l < car.cmd_r:
-            reward -= 0.08
+            reward += 0.05
+        elif car.cmd_l < car.cmd_r and abstruction:
+            reward -= 0.05
     
+    if car.just_entered_new_cell:
+        car.just_entered_new_cell = False
+        reward += 0.05
     
     return reward
 
@@ -414,16 +356,13 @@ def car_collides(car_pts, walls): #check car colision
                 return True
     return False
 
-def reset_world(num): #reset world
+def reset_world(): #reset world
     global WALLS
     
-    if num % 2 == 0:
-        WALLS = generate_maze(cell=80) #temp
-    else:
-        WALLS = random_obsticles(n=OBSTICLE_COUNT)
+    WALLS = random_obsticles(n=OBSTICLE_COUNT)
     
-        while not map_has_escape(WIDTH / 2, HEIGHT / 2, WALLS, n_rays=180):
-            WALLS = random_obsticles(n=OBSTICLE_COUNT)
+    while not map_has_escape(WIDTH / 2, HEIGHT / 2, WALLS, n_rays=180):
+        WALLS = random_obsticles(n=OBSTICLE_COUNT)
 
 def kill_car(car): #kill
     car.fitness -= 1.0
@@ -457,7 +396,7 @@ def main(render=True, mode="train", load_path=None): #-----MAIN-----#
     for _i in range(CAR_COUNT):
         cars.append(create_car())
     
-    reset_world(1)
+    reset_world()
     
     global EPISODE_LEN
     
@@ -506,17 +445,19 @@ def main(render=True, mode="train", load_path=None): #-----MAIN-----#
             if car.ray_timer >= RAY_DELAY: 
                 dist = car.ray_distance(WALLS, RAY_SEQUENCE[car.ray_idx])
             
-                car.ray_dists[RAY_SEQUENCE[car.ray_idx]] = dist
+                car.temp_ray_dists[RAY_SEQUENCE[car.ray_idx]] = dist
                 car.ray_idx = (car.ray_idx + 1) % len(RAY_SEQUENCE)
+                
+                if car.ray_idx == 0:
+                    car.ray_dists = dict(car.temp_ray_dists)
+                    car.temp_ray_dists = dict(car.ray_dists)
+                    
                 car.ray_timer = 0.0
         
             obs = car_observation(car)
             
             #car move logic
             a_l, a_r = car.policy.act(obs)
-            
-            if car.mirror:
-                a_l, a_r = a_r, a_l
             
             q_l = quantize_ternary(a_l, deadband=0.3)
             q_r = quantize_ternary(a_r, deadband=0.3)
@@ -525,6 +466,11 @@ def main(render=True, mode="train", load_path=None): #-----MAIN-----#
                 q_l, q_r = car.cmd_l, car.cmd_r
                 car.cmd_hold -= 1
             else:
+                if q_l > q_r:
+                    car.turn_stats += 0.1
+                elif q_l < q_r:
+                    car.turn_stats -= 0.1
+                
                 if (q_l != car.cmd_l) or (q_r != car.cmd_r):
                     car.cmd_l, car.cmd_r = q_l, q_r
                     car.cmd_hold = CMD_MIN_HOLD_FRAMES
@@ -575,9 +521,12 @@ def main(render=True, mode="train", load_path=None): #-----MAIN-----#
         if frame_count >= EPISODE_LEN or dead_cars >= CAR_COUNT: #new episode logic
             
             if mode == "play":
-                cars = reset_world()
+                reset_world()
                 if load_path:
                     best = load_policy_npz(load_path)
+                    cars = []
+                    for _i in range(CAR_COUNT):
+                        cars.append(create_car())
                     for c in cars:
                         c.policy = best
                 frame_count = 0
@@ -590,7 +539,7 @@ def main(render=True, mode="train", load_path=None): #-----MAIN-----#
             best = elites[0].fitness
             avg  = sum(c.fitness for c in cars) / len(cars)
             print(f"Gen {GEN:03d}  best={best:.2f}  avg={avg:.2f}")
-            
+            print(f"best turning behaviour: {car.turn_stats:.2f}")
             global target_for_length, best_ever_score
             
             if best > target_for_length:
@@ -618,7 +567,7 @@ def main(render=True, mode="train", load_path=None): #-----MAIN-----#
                 child.policy = parent.policy.clone_mutate(sigma=0.15)
                 new_cars.append(child)
             
-            reset_world(GEN)
+            reset_world()
             
             cars = new_cars
             best_car_now = cars[0]

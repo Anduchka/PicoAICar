@@ -1,0 +1,23 @@
+%TF.GenerationSoftware,KiCad,Pcbnew,9.0.3*%
+%TF.CreationDate,2025-10-17T23:17:00-07:00*%
+%TF.ProjectId,Small_car_electronics.FCStd,536d616c-6c5f-4636-9172-5f656c656374,rev?*%
+%TF.SameCoordinates,Original*%
+%TF.FileFunction,Profile,NP*%
+%FSLAX46Y46*%
+G04 Gerber Fmt 4.6, Leading zero omitted, Abs format (unit mm)*
+G04 Created by KiCad (PCBNEW 9.0.3) date 2025-10-17 23:17:00*
+%MOMM*%
+%LPD*%
+G01*
+G04 APERTURE LIST*
+%TA.AperFunction,Profile*%
+%ADD10C,0.050000*%
+%TD*%
+G04 APERTURE END LIST*
+D10*
+X67500000Y-47000000D02*
+X123000000Y-47000000D01*
+X123000000Y-117500000D01*
+X67500000Y-117500000D01*
+X67500000Y-47000000D01*
+M02*
